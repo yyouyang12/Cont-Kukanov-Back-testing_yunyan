@@ -2,10 +2,10 @@
 
 ## Overview
 
-This project implements an optimal order placement algorithm following the Cont-Kukanov model. It simulates and compares four strategies for executing a large order across multiple venues:
+This project implements an optimal order placement algorithm follows the static cost model introduced by Cont & Kukanov (“Optimal Order Placement in Limit Order Markets”). It simulates and compares four strategies for executing a large order across multiple venues:
 
 - **Cont-Kukanov optimal allocator** (our method)
-- **Best Ask** (naïve baseline, always take the best ask)
+- **Take the best (Best Ask)** (naïve baseline, always take the best ask)
 - **TWAP** (Time Weighted Average Price baseline)
 - **VWAP** (Volume Weighted Average Price baseline)
 
@@ -15,10 +15,19 @@ All strategies are backtested on Level-1 market data (`l1_day.csv`), using venue
 
 - `allocate`: Exhaustive search allocator based on the Cont-Kukanov pseudocode.
 - `compute_cost`: Computes cost given an allocation, including penalties for underfill/overfill and queue risk.
+- `take_the_best`, `TWAP`, `VWAP`: Baseline strategies.
 - `run_backtest`: Executes the backtest loop, applying optimal allocation on each snapshot.
 - `grid_search`: Grid search over `lambda_over`, `lambda_under`, `theta_queue` parameters to find the best Cont-Kukanov configuration.
-- `best_ask_strategy`, `twap_strategy`, `vwap_strategy`: Baseline strategies.
 - `main`: Loads data, runs grid search and baselines, computes savings, outputs JSON summary.
+```
+├── allocator.py           # Core allocate() + compute_cost() logic (pseudocode-compliant)
+├── baselines.py           # Best Ask, TWAP, VWAP baseline implementations
+├── backtest.py            # Backtest runner, grid search
+├── utils.py               # Load venues, data preprocessing
+├── main.py                # Entry point, outputs result.json and result.png
+├── l1_day.csv             # Input dataset (Level-1 order book snapshots)
+├── README.md              # This file
+```
 
 ## Parameter Search
 
