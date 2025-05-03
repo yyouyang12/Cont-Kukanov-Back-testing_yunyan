@@ -21,70 +21,40 @@ All strategies are evaluated in terms of total cost and average execution price.
 
 ## Code Structure
 
-### `allocate`
-
-- Exhaustive search allocator
-- Implements the Cont-Kukanov pseudocode exactly as described
-- Evaluates all valid splits of the target order across venues to find the one with minimal cost
-
-### `compute_cost`
-
-- Evaluates the cost of an order allocation
-- Incorporates:
-  - Ask prices and fees
-  - Penalties for:
-    - Overfill (`lambda_over`)
-    - Underfill (`lambda_under`)
-    - Queue risk (`theta_queue`)
-  
-### `load_venues(df, fee, rebate)`
-
-- Preprocess the raw Level-1 market data
-- For every unique `ts_event` (timestamp), and `publisher_id` (venue), keeps only the first record
-- Groups them into **snapshots** that will be fed into all strategies
-- Adds customizable `fee` and `rebate` per venue
-
-### `get_buckets`
-- Splits Level-1 data into time buckets covering the 9-minute window.
-
-### Baseline strategies
-
-- `take_the_best`: Always fills from the venue with the best ask
-- `TWAP`: Splits the order evenly across snapshots
-- `VWAP`: Splits the order proportionally to displayed ask size in each snapshot
-
-### `run_backtest`
-
-- Main loop to run Cont-Kukanov allocator against historical venue snapshots
-- Simulates fills, accumulates total cost and average price
-
-### `grid_search`
-
-- Searches over grids of `lambda_over`, `lambda_under`, and `theta_queue` to find the best performing parameter set
-
-### `main`
-
-- Loads and process data
-- Defines tunable parameters (below)
-- Runs Cont-Kukanov model and baselines models
-- Computes savings (bps) against baselines
-- Outputs final JSON report and saves cumulative cost plot (`results.png`)
-
+- `allocate`: Exhaustive search allocator based on Cont-Kukanov pseudocode.
+- `compute_cost`: Calculates total cost for an allocation including fees, rebates, under/overfill penalties, and queue risk.
+- `load_venues`: Converts raw orderbook data to snapshot format with fee and rebate settings.
+- `take_the_best`, `TWAP`, `VWAP`: Baseline allocation methods.
+- `run_backtest`: Executes backtest loop with the optimal allocator.
+- `grid_search`: Searches for best parameters (`lambda_over`, `lambda_under`, `theta_queue`).
+- `main`: Prepares data, runs grid search and baselines, saves JSON results, and plots cumulative cost (`results.png`).
 
 ## Tunable Parameters
 
 ```python
-lambda_over_grid = [0.05, 0.1, 0.3, 0.5]
-lambda_under_grid = [0.1, 0.2, 0.4]
-theta_queue_grid = [0.05, 0.1, 0.3]
+# These parameters can be freely modified in `main` to adapt to new scenarios or datasets.
+lambda_over_grid = [0.0001, 0.001, 0.01, 0.05, 0.1]
+lambda_under_grid = [0.0001, 0.001, 0.01, 0.05, 0.1]
+theta_queue_grid = [0.0001, 0.001, 0.01, 0.05, 0.1]
 
 order_size = 5000
 fee = 0.003
 rebate = 0.0015
+# Fee and rebate are key market characteristics and directly impact expected execution cost.
+# I set `fee = 0.003` and `rebate = 0.0015` to simulate typical maker/taker fees observed in U.S. equity markets.
+# Including them as parameters allows the allocator to better reflect cross-venue cost differences when placing orders.
+
 ```
 
-These parameters can be freely modified in `main` to adapt to new scenarios or datasets.
+### Why Are Small Penalty Parameters Selected?
 
+During backtesting, I found the grid search tends to select very small values for `lambda_over`, `lambda_under`, and `theta_queue`. This may reflects the current model structure and data characteristics:
+
+- The allocator enforces exact fills (sum of allocation equals order size), which makes overfill and underfill penalties rarely triggered.
+- The market snapshots usually offer sufficient ask sizes, so underfills are uncommon.
+- The queue-risk penalty (`theta_queue`) is modeled in a simplified way without actual queue depth modeling, resulting in limited impact on cost calculations.
+
+Therefore, in this setting, smaller penalty parameters naturally lead to slightly lower expected costs. 
 
 ## Output
 
@@ -96,27 +66,34 @@ The script prints a JSON object containing:
 - `results.png` plot showing cumulative cost comparison
 
 
-## Suggested Improvements
+## Potential Improvements for Fill Realism
 
-### Smarter parameter search
+While the current backtest assumes perfect and proportional fills based on displayed liquidity, real-world trading involves more uncertainty and dynamics. To improve fill realism and make the allocator more practical, the following enhancements could be considered:
 
-Current grid search is simple and exhaustive. A **stochastic approximation algorithm** (as used in the original paper) could be applied for faster and more adaptive tuning.
+### Smarter Parameter Search
 
-### Additional variables to improve realism
+- The current grid search is simple and exhaustive.
+- A **stochastic approximation algorithm** (as proposed in the original Cont & Kukanov paper) could be used for faster, more adaptive tuning. This would allow dynamic learning of optimal parameters based on historical performance.
 
-- Hidden liquidity probability
-- Venue execution latency
-- Historical venue fill ratios
-- Price volatility and spread widening risk
-- Market impact modeling
-- Queue position modeling
-- Order expiry/modification dynamics
+### Modeling Additional Market Variables
 
-### Advanced allocator logic
+- **Hidden liquidity probability**  
+  Not all available liquidity is visible. Modeling hidden orders could impact fill assumptions.
 
-- Probabilistic fill model for limit orders
-- Online learning or RL-based adaptive allocator
-- Smarter queue-aware limit order placement
+- **Queue position modeling**  
+  Limit orders placed deep in the queue are less likely to fill. Introducing queue depth estimates would improve realism.
+
+- **Order expiry and modification dynamics**  
+  In reality, orders are often amended or canceled during execution.
+
+### Advanced Allocator Logic
+
+- **Online learning or reinforcement learning (RL) based adaptive allocator**  
+  Adjust order placement strategy dynamically based on observed execution performance.
+
+- **Queue position simulation with expected fill modeling**  
+  Assume other traders are ahead in the queue and adjust estimated fillable shares accordingly.
+
 
 ## Reference
 Cont, R., & Kukanov, A. (2014). Optimal order placement in limit order markets. arXiv preprint arXiv:1210.1625v4. https://doi.org/10.48550/arXiv.1210.1625
