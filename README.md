@@ -16,7 +16,7 @@ We compare this Cont-Kukanov based optimal allocator against three baselines:
 - **TWAP** (Time Weighted Average Price)
 - **VWAP** (Volume Weighted Average Price)
 
-All strategies are evaluated in terms of total cost and average execution price. A JSON report and cumulative cost plot (`results.png`) are generated.
+All strategies are evaluated in terms of total cost and average execution price. All baselines and metrics are computed over the same 9-minute window provided in the data, ensuring fair comparison. A JSON report and cumulative cost plot (`results.png`) are generated.
 
 
 ## Code Structure
@@ -44,6 +44,9 @@ All strategies are evaluated in terms of total cost and average execution price.
 - Groups them into **snapshots** that will be fed into all strategies
 - Adds customizable `fee` and `rebate` per venue
 
+### `get_buckets`
+- Splits Level-1 data into time buckets covering the 9-minute window.
+
 ### Baseline strategies
 
 - `take_the_best`: Always fills from the venue with the best ask
@@ -61,7 +64,7 @@ All strategies are evaluated in terms of total cost and average execution price.
 
 ### `main`
 
-- Loads market data
+- Loads and process data
 - Defines tunable parameters (below)
 - Runs Cont-Kukanov model and baselines models
 - Computes savings (bps) against baselines
