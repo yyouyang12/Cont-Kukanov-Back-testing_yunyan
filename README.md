@@ -16,7 +16,7 @@ We compare this Cont-Kukanov based optimal allocator against three baselines:
 - **TWAP** (Time Weighted Average Price)
 - **VWAP** (Volume Weighted Average Price)
 
-All strategies are backtested and evaluated in terms of total cost and average execution price. A JSON report and cumulative cost plot (`results.png`) are generated.
+All strategies are evaluated in terms of total cost and average execution price. A JSON report and cumulative cost plot (`results.png`) are generated.
 
 
 ## Code Structure
