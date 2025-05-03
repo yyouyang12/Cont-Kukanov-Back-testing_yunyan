@@ -115,3 +115,5 @@ Current grid search is simple and exhaustive. A **stochastic approximation algor
 - Online learning or RL-based adaptive allocator
 - Smarter queue-aware limit order placement
 
+## Reference
+Cont, R., & Kukanov, A. (2014). Optimal order placement in limit order markets. arXiv preprint arXiv:1210.1625v4. https://doi.org/10.48550/arXiv.1210.1625
