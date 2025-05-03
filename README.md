@@ -46,7 +46,3 @@ The script produces a JSON object summarizing:
 - Savings vs baselines (bps)
 
 Optionally, `results.png` can be produced showing cumulative cost comparison.
-
----
-
-**Total script runtime: < 2 minutes**
